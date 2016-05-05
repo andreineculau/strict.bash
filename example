@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# set -x # or env ${SHELLOPTS} has xtrace
+
+{
+    DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    source ${DIR}/strict.bash
+} 2>/dev/null
+
+# MODIFY BELOW TO YOUR WILL
+
+exe "false || true" # allow non-zero exists
+false || true       # allow non-zero exists (but no stdout output)
+
+sleep 5             # try pressing CTRL-C
+exe false           # this should fail and be trapped
