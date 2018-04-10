@@ -13,21 +13,23 @@ set -o pipefail  # failure on any command errors
 set -o errtrace  # shell functions inherit ERR trap
 set -o functrace # shell functions inherit DEBUG trap
 
-BASH_XTRACEFD=${BASH_XTRACEFD:-5}
 SHELLOPT_XTRACE=
 set -o | grep xtrace | grep -q on && SHELLOPT_XTRACE=1
 
 # better debug lines
-[ -n ${SHELLOPT_XTRACE} ] && {
+[ -z "${SHELLOPT_XTRACE}" ] || {
     set +x
     export PS4='+(${BASH_SOURCE[0]}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
     set -x
-} || true
+}
 
-for sig in HUP INT QUIT TERM EXIT; do trap "TRAP_SIGNAL=\"${sig}\" TRAP_CODE=\"\$?\" TRAP_LOCATION=\"+(\${BASH_SOURCE}:\${LINENO}): \${FUNCNAME[0]:+\${FUNCNAME[0]}(): }\" TRAP_COMMAND=\"\${EXE_COMMAND:-\${BASH_COMMAND}}\" on_trap ${BASH_XTRACEFD}>/dev/null" ${sig}; done
+BASH_XTRACEFD_REDIRECT=
+[ -z "${BASH_XTRACEFD:-}" ] || BASH_XTRACEFD_REDIRECT="${BASH_XTRACEFD}>/dev/null"
+
+for sig in HUP INT QUIT TERM EXIT; do trap "TRAP_SIGNAL=\"${sig}\" TRAP_CODE=\"\$?\" TRAP_LOCATION=\"+(\${BASH_SOURCE}:\${LINENO}): \${FUNCNAME[0]:+\${FUNCNAME[0]}(): }\" TRAP_COMMAND=\"\${EXE_COMMAND:-\${BASH_COMMAND}}\" on_trap ${BASH_XTRACEFD_REDIRECT}" ${sig}; done
 function on_trap() {
     set +x
-    [ "${TRAP_SIGNAL}" == "EXIT" && "${TRAP_CODE}" == "0" ] && return || true
+    [ "${TRAP_SIGNAL}" == "EXIT" ] && [ "${TRAP_CODE}" == "0" ] && return || true
     echo >&2 "
 --------------------------------------------------------------------------------
 ${TRAP_SIGNAL} with ${TRAP_CODE}
